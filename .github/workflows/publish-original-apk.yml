@@ -1,0 +1,56 @@
+name: Publicar APK original 1.1.0
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-original-apk-v1.1.0
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Obter APK original
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Verificar bytes do APK sem recompilar
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd distribution
+          sha256sum --check roleta-1.1.0.apk.sha256
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('roleta-1.1.0.apk') as apk:
+              assert apk.testzip() is None
+              assert apk.getinfo('assets/index.android.bundle').file_size > 1000000
+              assert 'classes.dex' in apk.namelist()
+          PY
+
+      - name: Anexar arquivo original e verificar download
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload v1.1.0 distribution/roleta-1.1.0.apk distribution/roleta-1.1.0.apk.sha256 --clobber
+          verification_dir="${RUNNER_TEMP}/verify-roleta"
+          mkdir -p "${verification_dir}"
+          gh release download v1.1.0 --pattern roleta-1.1.0.apk --dir "${verification_dir}"
+          cp distribution/roleta-1.1.0.apk.sha256 "${verification_dir}/"
+          (cd "${verification_dir}" && sha256sum --check roleta-1.1.0.apk.sha256)
+
+      - name: Publicar Release verificada
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release edit v1.1.0 --draft=false
+          echo "[Baixar APK original](https://github.com/${GH_REPO}/releases/download/v1.1.0/roleta-1.1.0.apk)" >> "${GITHUB_STEP_SUMMARY}"
