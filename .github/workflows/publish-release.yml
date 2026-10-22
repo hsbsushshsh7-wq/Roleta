@@ -1,0 +1,65 @@
+name: Publicar APK verificado
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Versão já compilada (ex. 2.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-apk-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - name: Obter APK compilado
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Validar versão e integridade
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          cd distribution
+          sha256sum --check "roleta-${RELEASE_VERSION}.apk.sha256"
+          python3 - <<'PY'
+          import os, zipfile
+          name = 'roleta-' + os.environ['RELEASE_VERSION'] + '.apk'
+          with zipfile.ZipFile(name) as apk:
+              assert apk.testzip() is None
+              assert apk.getinfo('assets/index.android.bundle').file_size > 1000000
+              assert 'classes.dex' in apk.namelist()
+          PY
+
+      - name: Anexar APK e conferir download
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="roleta-${RELEASE_VERSION}.apk"
+          gh release upload "v${RELEASE_VERSION}" "distribution/${apk}" "distribution/${apk}.sha256" --clobber
+          verification_dir="${RUNNER_TEMP}/verify-roleta"
+          mkdir -p "${verification_dir}"
+          gh release download "v${RELEASE_VERSION}" --pattern "${apk}" --dir "${verification_dir}"
+          cp "distribution/${apk}.sha256" "${verification_dir}/"
+          (cd "${verification_dir}" && sha256sum --check "${apk}.sha256")
+
+      - name: Publicar Release verificada
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release edit "v${RELEASE_VERSION}" --draft=false
+          echo "[Baixar APK](https://github.com/${GH_REPO}/releases/download/v${RELEASE_VERSION}/roleta-${RELEASE_VERSION}.apk)" >> "${GITHUB_STEP_SUMMARY}"
