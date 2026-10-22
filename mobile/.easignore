@@ -1,0 +1,12 @@
+node_modules
+.git
+.expo
+dist
+coverage
+tests
+docs
+*.zip
+android
+ios
+
+artifacts
