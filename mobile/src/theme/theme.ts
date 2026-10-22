@@ -1,0 +1,61 @@
+import { StyleSheet } from "react-native";
+export const colors = {
+  ink: "#191827",
+  muted: "#84838E",
+  purple: "#6450D9",
+  purpleDark: "#4F3CCB",
+  lilac: "#F0EDFF",
+  border: "#E5E4EB",
+  input: "#F8F8FA",
+  white: "#FFFFFF",
+  green: "#29B58C",
+  red: "#F56868",
+};
+export { palette } from "./palette";
+export const ui = StyleSheet.create({
+  card: {
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderRadius: 26,
+    padding: 21,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+    boxShadow: "0px 12px 32px rgba(49, 37, 80, 0.045)",
+    gap: 18,
+  },
+  eyebrow: {
+    color: colors.purple,
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1.8,
+  },
+  title: {
+    color: colors.ink,
+    fontSize: 25,
+    fontWeight: "600",
+    letterSpacing: -1.1,
+  },
+  body: { color: colors.muted, fontSize: 14, lineHeight: 22 },
+  label: { color: "#5A5866", fontSize: 14, fontWeight: "500" },
+  input: {
+    backgroundColor: colors.input,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 17,
+    paddingHorizontal: 14,
+    paddingVertical: 15,
+    color: colors.ink,
+    fontSize: 18,
+    minHeight: 54,
+  },
+  row: { flexDirection: "row", alignItems: "center", gap: 12 },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: 4 },
+  chip: {
+    backgroundColor: colors.lilac,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 30,
+    color: colors.purple,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+});
